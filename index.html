@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Temperature Monitor</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-database.js"></script>
+  </head>
+  <body>
+    <h1>Current Temperature</h1>
+    <span>OBOUR:&;</span>
+    <span id="temperature">Loading...</span>
+
+    <script type="module">
+      // Import the functions you need from the SDKs
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        onValue,
+      } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-database.js";
+
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyAGFACubGOoUjhb-OjIE5kvwhxry2FHu08",
+        authDomain: "temperature-monitor-448b5.firebaseapp.com",
+        databaseURL:
+          "https://temperature-monitor-448b5-default-rtdb.firebaseio.com",
+        projectId: "temperature-monitor-448b5",
+        storageBucket: "temperature-monitor-448b5.firebasestorage.app",
+        messagingSenderId: "689561580923",
+        appId: "1:689561580923:web:acc61ae5357130c533b9de",
+        measurementId: "G-5LRST9L7WR",
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+
+      // Get a reference to the database
+      const database = getDatabase(app);
+
+      // Get the temperature data from Firebase
+      const temperatureRef = ref(database, "test/push"); // Path where temperature data is stored
+
+      // Listen for value changes and display the temperature
+      onValue(temperatureRef, (snapshot) => {
+        const temperature = snapshot.val(); // Get the value of the snapshot
+        if (temperature) {
+          // Get the latest temperature value (assuming it's an array or object)
+          const latestTemperature =
+            temperature[
+              Object.keys(temperature)[Object.keys(temperature).length - 1]
+            ];
+          document.getElementById(
+            "temperature"
+          ).textContent = `${latestTemperature} °C`; // Display temperature
+        } else {
+          document.getElementById("temperature").textContent =
+            "No temperature data available"; // Fallback message
+        }
+      });
+    </script>
+  </body>
+</html>
