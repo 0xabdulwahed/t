@@ -22,29 +22,24 @@
 
       h1 {
         color: #333;
-        font-size: 2rem;
+        font-size: 2.5rem;
+        margin-bottom: 20px;
       }
 
       .temperature-container {
         background-color: #ffffff;
-        border-radius: 10px;
+        border-radius: 15px;
         padding: 30px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        width: 250px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        width: 300px;
         text-align: center;
       }
 
-      .temperature-container span {
-        font-size: 1.5rem;
-        color: #555;
-      }
-
-      #temperature {
-        display: block;
-        margin-top: 20px;
-        font-size: 2.5rem;
+      .temperature {
+        font-size: 2rem;
         font-weight: bold;
-        color: #e74c3c;
+        color: #3498db;
+        margin-top: 20px;
       }
 
       .footer {
@@ -53,19 +48,31 @@
         font-size: 0.9rem;
         color: #888;
       }
+
+      .temperature-container span {
+        display: block;
+        font-size: 1.2rem;
+        color: #555;
+        margin-top: 10px;
+      }
     </style>
   </head>
   <body>
     <div class="temperature-container">
       <h1>Current Temperature</h1>
-      <span id="temperature">Loading...</span>
+      <div class="temperature" id="temperature">Loading...</div>
+      <span id="status">Please wait while we fetch the data...</span>
     </div>
 
     <div class="footer">Powered by Abdulwahed</div>
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
-      import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-database.js";
+      import {
+        getDatabase,
+        ref,
+        onValue,
+      } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-database.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyC7L9vhQpVg7pqR5-J5_MFIKSdFA3cnB8U",
@@ -78,18 +85,28 @@
         measurementId: "G-0M42EVQTF8",
       };
 
+      // Initialize Firebase
       const app = initializeApp(firebaseConfig);
       const database = getDatabase(app);
-      const temperatureRef = ref(database, "test/push");
+      const temperatureRef = ref(database, "Temperature");
 
+      // Listen for changes in temperature from Firebase
       onValue(temperatureRef, (snapshot) => {
         const temperature = snapshot.val();
-        if (temperature) {
-          const latestTemperature =
-            temperature[Object.keys(temperature)[Object.keys(temperature).length - 1]];
-          document.getElementById("temperature").textContent = `${latestTemperature} °C`;
+        console.log("Temperature from Firebase:", temperature);
+
+        // If temperature is available
+        if (temperature === null) {
+          document.querySelector("#temperature").textContent =
+            "No data available";
+          document.querySelector("#status").textContent =
+            "Please check your Firebase configuration.";
         } else {
-          document.getElementById("temperature").textContent = "No temperature data available";
+          document.querySelector(
+            "#temperature"
+          ).textContent = `${temperature}°C`;
+          document.querySelector("#status").textContent =
+            "Data fetched successfully!";
         }
       });
     </script>
