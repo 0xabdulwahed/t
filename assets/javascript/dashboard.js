@@ -52,13 +52,13 @@ function startTemperatureMonitoring(branchFilter = null) {
           }
         });
       });
-  }, 10 * 60 * 1000);
+  }, 1 * 60 * 1000);
 }
 
 function shouldNotify(branchName) {
   return (
     !lastNotifiedBranches[branchName] ||
-    Date.now() - lastNotifiedBranches[branchName] > 10 * 60 * 1000
+    Date.now() - lastNotifiedBranches[branchName] > 1 * 60 * 1000
   );
 }
 
