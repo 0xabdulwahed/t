@@ -1,0 +1,15 @@
+{
+  "Users": {
+    "manager@gmail,com": {
+      "Role": "Manager",
+      "Branch": "C_K"
+    },
+    "managertwo@gmail,com": {
+      "Role": "Manager",
+      "Branch": "D5"
+    },
+    "admin@gmail,com": {
+      "Role": "Admin"
+    }
+  }
+}

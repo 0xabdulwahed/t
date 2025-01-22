@@ -3,112 +3,59 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Temperature Monitor</title>
-    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-database.js"></script>
+    <meta
+      name="description"
+      content="Craft Technology Dashboard - Monitor and manage branch activities in real-time."
+    />
+    <meta name="author" content="Craft Technology" />
+    <meta
+      name="keywords"
+      content="Dashboard, Craft Technology, Temperature Monitoring, Admin Panel"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f7fa;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        text-align: center;
-      }
+    <title>Dashboard | Craft Technology</title>
 
-      h1 {
-        color: #333;
-        font-size: 2.5rem;
-        margin-bottom: 20px;
-      }
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-ico" href="assets/images/favicon.ico" />
 
-      .temperature-container {
-        background-color: #ffffff;
-        border-radius: 15px;
-        padding: 30px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        width: 300px;
-        text-align: center;
-      }
-
-      .temperature {
-        font-size: 2rem;
-        font-weight: bold;
-        color: #3498db;
-        margin-top: 20px;
-      }
-
-      .footer {
-        position: absolute;
-        bottom: 20px;
-        font-size: 0.9rem;
-        color: #888;
-      }
-
-      .temperature-container span {
-        display: block;
-        font-size: 1.2rem;
-        color: #555;
-        margin-top: 10px;
-      }
-    </style>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="assets/css/app.css" />
   </head>
+
   <body>
-    <div class="temperature-container">
-      <h1>Current Temperature</h1>
-      <div class="temperature" id="temperature">Loading...</div>
-      <span id="status">Please wait while we fetch the data...</span>
-    </div>
+    <!-- Header Section -->
+    <header class="header">
+      <div class="container">
+        <img
+          src="assets/images/logo-white.png"
+          alt="Logo"
+          class="logo"
+          width="300px"
+        />
+        <button id="logout-button" class="logout-button">Logout</button>
+      </div>
+    </header>
 
-    <div class="footer">Powered by Abdulwahed</div>
+    <!-- Main Content -->
+    <main>
+      <div id="dashboard" class="container"></div>
+    </main>
 
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
-      import {
-        getDatabase,
-        ref,
-        onValue,
-      } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-database.js";
+    <!-- Footer Section -->
+    <footer class="site-footer">
+      <div class="footer-content">
+        &copy; 2025 Craft Technology. All rights reserved.
+      </div>
+    </footer>
 
-      const firebaseConfig = {
-        apiKey: "AIzaSyC7L9vhQpVg7pqR5-J5_MFIKSdFA3cnB8U",
-        authDomain: "temp-9749a.firebaseapp.com",
-        databaseURL: "https://temp-9749a-default-rtdb.firebaseio.com",
-        projectId: "temp-9749a",
-        storageBucket: "temp-9749a.firebasestorage.app",
-        messagingSenderId: "372804242566",
-        appId: "1:372804242566:web:2353a7dffdb571518dd507",
-        measurementId: "G-0M42EVQTF8",
-      };
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const database = getDatabase(app);
-      const temperatureRef = ref(database, "Temperature");
-
-      // Listen for changes in temperature from Firebase
-      onValue(temperatureRef, (snapshot) => {
-        const temperature = snapshot.val();
-        console.log("Temperature from Firebase:", temperature);
-
-        // If temperature is available
-        if (temperature === null) {
-          document.querySelector("#temperature").textContent =
-            "No data available";
-          document.querySelector("#status").textContent =
-            "Please check your Firebase configuration.";
-        } else {
-          document.querySelector(
-            "#temperature"
-          ).textContent = `${temperature}°C`;
-          document.querySelector("#status").textContent =
-            "Data fetched successfully!";
-        }
-      });
-    </script>
+    <!-- Custom Scripts -->
+    <script src="assets/javascript/firebase-config.js"></script>
+    <script src="assets/javascript/dashboard.js"></script>
   </body>
 </html>

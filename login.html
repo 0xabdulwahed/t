@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Sign in to Craft Technology Dashboard and manage your account with ease."
+    />
+    <meta
+      name="keywords"
+      content="Craft Technology, Login, Dashboard, Sign In"
+    />
+    <meta name="author" content="Craft Technology" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <title>Craft Technology - Sign In</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/ico" href="assets/images/favicon.ico" />
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="assets/css/app.css" />
+  </head>
+
+  <body class="login-page">
+    <!-- Login Form Container -->
+    <div class="form-container">
+      <!-- Form Header -->
+      <div class="text-form">
+        <img
+          src="assets/images/logo.png"
+          alt="Logo"
+          class="logo"
+        />
+        <p class="form-description">
+          Access your dashboard by signing in below
+        </p>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="login-form">
+        <!-- Email Input -->
+        <div class="input-group">
+          <label for="email" class="input-label">Email</label>
+          <input
+            type="email"
+            id="email"
+            class="input-field"
+            placeholder="Enter your email"
+            required
+          />
+        </div>
+
+        <!-- Password Input -->
+        <div class="input-group">
+          <label for="password" class="input-label">Password</label>
+          <input
+            type="password"
+            id="password"
+            class="input-field"
+            placeholder="Enter your password"
+            required
+          />
+        </div>
+
+        <!-- Error Message -->
+        <p id="error-message" class="error-message" style="display: none"></p>
+
+        <!-- Submit Button -->
+        <div class="submit-button">
+          <button type="submit" class="button submit">Sign In</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-content">
+        &copy; 2025 Craft Technology. All rights reserved.
+      </div>
+    </footer>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+    <!-- Custom Scripts -->
+    <script src="assets/javascript/firebase-config.js"></script>
+    <script src="assets/javascript/login.js"></script>
+  </body>
+</html>
