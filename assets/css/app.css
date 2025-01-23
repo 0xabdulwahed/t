@@ -141,6 +141,7 @@ body.login-page {
 .header {
   background-color: var(--color-black);
   padding: 20px;
+  position: relative;
 }
 
 .header .container {
@@ -164,6 +165,83 @@ body.login-page {
   font-size: 17px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.logout-button.desktop-only {
+  display: block;
+}
+
+.menu-toggle.mobile-only {
+  display: none;
+}
+
+.dropdown-menu.mobile-only {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .logout-button.desktop-only {
+    display: none;
+  }
+
+  .menu-toggle.mobile-only {
+    display: block;
+    cursor: pointer;
+    font-size: 24px;
+    color: var(--color-white);
+  }
+
+  .dropdown-menu.mobile-only {
+    position: fixed;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    background-color: var(--color-black);
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: top 0.5s ease-in-out;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .dropdown-menu.mobile-only.active {
+    top: 0;
+  }
+
+  /* Close Button */
+  .close-menu {
+    background: none;
+    border: none;
+    color: var(--color-white);
+    font-size: 24px;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+
+  .close-menu:hover {
+    color: var(--color-gray);
+  }
+
+  /* Logout Button */
+  .dropdown-menu.mobile-only button.logout-button {
+    width: 100%;
+    padding: 15px;
+    background-color: var(--color-white);
+    color: var(--color-black);
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--transition-speed);
+  }
+
+  .dropdown-menu.mobile-only button.logout-button:hover {
+    background-color: var(--color-gray);
+    color: var(--color-white);
+  }
 }
 
 /* Dashboard */
@@ -287,10 +365,5 @@ main .container {
 
   .header .logo {
     width: 200px;
-    padding-bottom: 20px;
-  }
-
-  .header .container {
-    flex-direction: column;
   }
 }
