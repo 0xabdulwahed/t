@@ -129,9 +129,12 @@ function redirectToLogin() {
 }
 
 // Logout Functionality
-document.getElementById("logout-button").addEventListener("click", () => {
+function handleLogout() {
   auth.signOut().then(() => {
     localStorage.removeItem("isLoggedIn");
     redirectToLogin();
   });
-});
+}
+
+document.getElementById("logout-button").addEventListener("click", handleLogout);
+document.getElementById("logout-button-mobile").addEventListener("click", handleLogout);
