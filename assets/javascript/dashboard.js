@@ -95,9 +95,9 @@ function renderBranch(branchName, branch) {
       <h3>Room Temperature</h3>
       <span class="temperature">${branch.Temperature}°C</span>
       <div class="details">
-        <span>Location: ${branch.Location}</span>
-        <span>Branch: ${branchName}</span>
-        <span>Door: Open</span>
+        <span><i class="fas fa-code-branch"></i> Branch: <strong>${branchName}</strong></span>
+        <span><i class="fas fa-map-marker-alt"></i> Location: <strong>${branch.Location}</strong></span>
+        <span><i class="fas fa-door-open"></i> Door: <strong>Rush Time</strong></span>
       </div>
     </div>
   `;
