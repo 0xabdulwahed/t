@@ -173,7 +173,7 @@ main {
 
 main .container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 30px;
   max-width: 800px;
   margin: 50px auto;
@@ -189,6 +189,9 @@ main .container {
   transition: transform var(--transition-speed),
     box-shadow var(--transition-speed);
   text-align: center;
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .box:hover {
@@ -214,7 +217,8 @@ main .container {
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: var(--border-radius);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: background-color var(--transition-speed), border-color var(--transition-speed);
+  transition: background-color var(--transition-speed),
+    border-color var(--transition-speed);
 }
 
 .details:hover {
@@ -267,24 +271,26 @@ main .container {
     font-size: 15px;
   }
 
-  .text-form img {
-    width: 200px;
-  }
-
-  .header .logo {
-    width: 150px;
-    padding-bottom: 20px;
-  }
-
-  .header .container {
-    flex-direction: column;
-  }
-
   .header button {
     font-size: 14px;
   }
 
   .footer-content {
     font-size: 12px;
+  }
+}
+
+@media (max-width: 500px) {
+  .text-form img {
+    width: 250px;
+  }
+
+  .header .logo {
+    width: 200px;
+    padding-bottom: 20px;
+  }
+
+  .header .container {
+    flex-direction: column;
   }
 }
