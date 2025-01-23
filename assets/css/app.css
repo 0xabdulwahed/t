@@ -237,11 +237,6 @@ body.login-page {
     cursor: pointer;
     transition: background-color var(--transition-speed);
   }
-
-  .dropdown-menu.mobile-only button.logout-button:hover {
-    background-color: var(--color-gray);
-    color: var(--color-white);
-  }
 }
 
 /* Dashboard */
