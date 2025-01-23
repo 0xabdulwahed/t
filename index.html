@@ -13,15 +13,17 @@
       content="Dashboard, Craft Technology, Temperature Monitoring, Admin Panel"
     />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <title>Dashboard | Craft Technology</title>
-
+    
     <!-- Favicon -->
     <link rel="icon" type="image/x-ico" href="assets/images/favicon.ico" />
-
+    
     <!-- Stylesheet -->
     <link rel="stylesheet" href="assets/css/app.css" />
+
+    <!-- Font AwesomeLibrary -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   </head>
 
   <body>
@@ -32,11 +34,22 @@
           src="assets/images/logo-white.png"
           alt="Logo"
           class="logo"
-          width="300px"
         />
-        <button id="logout-button" class="logout-button">Logout</button>
-      </div>
+
+        <button id="logout-button" class="logout-button desktop-only">Logout</button>
+
+        <div class="menu-toggle mobile-only" id="menu-toggle">
+          <i class="fas fa-bars"></i>
+        </div>
     </header>
+
+     <!-- Dropdown Menu -->
+    <div class="dropdown-menu mobile-only" id="dropdown-menu">
+      <button id="close-menu" class="close-menu">
+        <i class="fas fa-times"></i>
+      </button>
+      <button id="logout-button-mobile" class="logout-button">Logout</button>
+    </div>
 
     <!-- Main Content -->
     <main>
@@ -55,8 +68,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
-    <!-- Custom Scripts -->
+    <!-- Master Scripts -->
     <script src="assets/javascript/firebase-config.js"></script>
     <script src="assets/javascript/dashboard.js"></script>
+    <script src="assets/javascript/app.js"></script>
   </body>
 </html>
