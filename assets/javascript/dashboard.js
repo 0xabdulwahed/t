@@ -13,10 +13,12 @@ auth.onAuthStateChanged((user) => {
           case "Admin":
             loadAdminDashboard();
             startTemperatureMonitoring();
+            checkTemperature();
             break;
           case "Manager":
             loadManagerDashboard(branch);
             startTemperatureMonitoring(branch);
+            checkTemperature(branch);
             break;
           default:
             handleUnauthorizedAccess();
@@ -27,76 +29,114 @@ auth.onAuthStateChanged((user) => {
   }
 });
 
-// Temperature Monitoring
 let lastNotifiedBranches = {};
 
 function startTemperatureMonitoring(branchFilter = null) {
+  checkTemperature(branchFilter);
+
   setInterval(() => {
+    checkTemperature(branchFilter);
+  }, 30 * 60 * 1000);
+}
+
+function checkTemperature(branchFilter = null) {
+  if (branchFilter) {
+    // For Manager: Check only the specific branch
+    db.ref(`Branches/${branchFilter}`)
+      .once("value")
+      .then((snapshot) => {
+        const locationData = snapshot.val();
+        if (locationData) {
+          Object.keys(locationData).forEach((location) => {
+            const branches = locationData[location];
+            Object.keys(branches).forEach((branchName) => {
+              const branch = branches[branchName];
+              if (branch.Temperature >= 10 && shouldNotify(branchName)) {
+                sendNotification(
+                  "Alert: High Temperature",
+                  `The temperature in branch ${branchName} (${location}) is ${branch.Temperature}°C.`
+                );
+                lastNotifiedBranches[branchName] = Date.now();
+              }
+            });
+          });
+        }
+      });
+  } else {
+    // For Admin: Check all branches
     db.ref("Branches")
       .once("value")
       .then((snapshot) => {
-        const branches = snapshot.val();
-        const branchNames = branchFilter
-          ? [branchFilter]
-          : Object.keys(branches);
-
-        branchNames.forEach((branchName) => {
-          const branch = branches[branchName];
-
-          if (branch.Temperature >= 5 && shouldNotify(branchName)) {
-            sendNotification(
-              "Alert: High Temperature",
-              `The temperature in branch ${branchName} is ${branch.Temperature}°C.`
-            );
-            lastNotifiedBranches[branchName] = Date.now();
-          }
-        });
+        const locations = snapshot.val();
+        if (locations) {
+          Object.keys(locations).forEach((location) => {
+            const branches = locations[location];
+            Object.keys(branches).forEach((branchName) => {
+              const branch = branches[branchName];
+              if (branch.Temperature >= 10 && shouldNotify(branchName)) {
+                sendNotification(
+                  "Alert: High Temperature",
+                  `The temperature in branch ${branchName} (${location}) is ${branch.Temperature}°C.`
+                );
+                lastNotifiedBranches[branchName] = Date.now();
+              }
+            });
+          });
+        }
       });
-  }, 1 * 60 * 1000);
+  }
 }
 
 function shouldNotify(branchName) {
   return (
     !lastNotifiedBranches[branchName] ||
-    Date.now() - lastNotifiedBranches[branchName] > 1 * 60 * 1000
+    Date.now() - lastNotifiedBranches[branchName] > 30 * 60 * 1000
   );
 }
 
 // Dashboard Loading Functions
 function loadAdminDashboard() {
   db.ref("Branches").on("value", (snapshot) => {
-    const branches = snapshot.val();
+    const locations = snapshot.val();
     const dashboard = document.getElementById("dashboard");
-    dashboard.innerHTML = branches
-      ? renderBranches(branches)
+    dashboard.innerHTML = locations
+      ? renderLocations(locations)
       : "<p>No branches available.</p>";
   });
 }
 
 function loadManagerDashboard(branch) {
   db.ref(`Branches/${branch}`).on("value", (snapshot) => {
-    const branchData = snapshot.val();
+    const locationData = snapshot.val();
     const dashboard = document.getElementById("dashboard");
-    dashboard.innerHTML = branchData
-      ? renderBranch(branch, branchData)
+    dashboard.innerHTML = locationData
+      ? renderLocation(branch, locationData)
       : "<p>No data available for this branch.</p>";
   });
 }
 
-function renderBranches(branches) {
-  return Object.entries(branches)
-    .map(([branchName, branch]) => renderBranch(branchName, branch))
+function renderLocations(locations) {
+  return Object.entries(locations)
+    .map(([location, branches]) => {
+      return renderBranches(branches, location); // نرجع الـ boxes مباشرة
+    })
     .join("");
 }
 
-function renderBranch(branchName, branch) {
+function renderBranches(branches, location) {
+  return Object.entries(branches)
+    .map(([branchName, branch]) => renderBranch(branchName, branch, location))
+    .join("");
+}
+
+function renderBranch(branchName, branch, location) {
   return `
     <div class="box">
       <h3>Room Temperature</h3>
       <span class="temperature">${branch.Temperature}°C</span>
       <div class="details">
+        <span><i class="fas fa-map-marker-alt"></i> Location: <strong>${location}</strong></span>
         <span><i class="fas fa-code-branch"></i> Branch: <strong>${branchName}</strong></span>
-        <span><i class="fas fa-map-marker-alt"></i> Location: <strong>${branch.Location}</strong></span>
         <span><i class="fas fa-door-open"></i> Door: <strong>Rush Time</strong></span>
       </div>
     </div>
@@ -136,5 +176,9 @@ function handleLogout() {
   });
 }
 
-document.getElementById("logout-button").addEventListener("click", handleLogout);
-document.getElementById("logout-button-mobile").addEventListener("click", handleLogout);
+document
+  .getElementById("logout-button")
+  .addEventListener("click", handleLogout);
+document
+  .getElementById("logout-button-mobile")
+  .addEventListener("click", handleLogout);
