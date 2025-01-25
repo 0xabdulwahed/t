@@ -1,5 +1,6 @@
 // Handle Authentication State
 auth.onAuthStateChanged((user) => {
+  showLoading(); // إظهار الـ loading أثناء انتظار التحقق
   if (user || localStorage.getItem("isLoggedIn") === "true") {
     const userEmailKey = user ? user.email.replace(".", ",") : "guest";
     db.ref(`Users/${userEmailKey}`)
@@ -90,17 +91,20 @@ function shouldNotify(branchName) {
 
 // Load Admin Dashboard
 function loadAdminDashboard() {
+  showLoading(); // إظهار الـ loading قبل جلب البيانات
   db.ref("Branches").on("value", (snapshot) => {
     const branches = snapshot.val();
     const dashboard = document.getElementById("dashboard");
     dashboard.innerHTML = branches
       ? renderBranches(branches)
       : "<p>No branches available.</p>";
+    hideLoading(); // إخفاء الـ loading بعد جلب البيانات
   });
 }
 
 // Load Manager Dashboard
 function loadManagerDashboard(branchName) {
+  showLoading(); // إظهار الـ loading قبل جلب البيانات
   db.ref(`Branches/${branchName}`).on("value", (snapshot) => {
     const branchData = snapshot.val();
     const dashboard = document.getElementById("dashboard");
@@ -110,19 +114,29 @@ function loadManagerDashboard(branchName) {
     } else {
       dashboard.innerHTML = "<p>No data available for this branch.</p>";
     }
+    hideLoading(); // إخفاء الـ loading بعد جلب البيانات
   });
 }
 
 // Load Regional Manager Dashboard
 function loadRegionalManagerDashboard(branchArray) {
+  showLoading(); // إظهار الـ loading قبل جلب البيانات
   const dashboard = document.getElementById("dashboard");
   dashboard.innerHTML = ""; // Clear previous content
+
+  let branchesLoaded = 0; // عداد لعدد الفروع التي تم تحميل بياناتها
 
   branchArray.forEach((branchName) => {
     db.ref(`Branches/${branchName}`).on("value", (snapshot) => {
       const branchData = snapshot.val();
       if (branchData) {
         dashboard.innerHTML += renderBranch(branchName, branchData);
+      }
+      branchesLoaded++;
+
+      // إذا تم تحميل بيانات جميع الفروع، نخفي الـ loading
+      if (branchesLoaded === branchArray.length) {
+        hideLoading();
       }
     });
   });
@@ -137,14 +151,13 @@ function renderBranches(branches) {
 
 // Render a single branch
 function renderBranch(branchName, branch) {
-  const doorStatus = branch.Door || "Unknown"; // Default to "Unknown" if Door status is not set
   return `
     <div class="box" data-branch="${branchName}">
       <h3>Room Temperature</h3>
       <span class="temperature">${branch.Temperature}°C</span>
       <div class="details">
         <span><i class="fas fa-code-branch"></i> Branch: <strong>${branchName}</strong></span>
-        <span><i class="fas fa-door-open"></i> Door: <strong>${doorStatus}</strong></span>
+        <span><i class="fas fa-door-open"></i> Door: <strong>${branch.Door}</strong></span>
       </div>
     </div>
   `;
@@ -182,6 +195,22 @@ function handleLogout() {
     localStorage.removeItem("isLoggedIn");
     redirectToLogin();
   });
+}
+
+// Show loading spinner
+function showLoading() {
+  const loadingElement = document.querySelector(".sk-chase");
+  if (loadingElement) {
+    loadingElement.style.display = "block";
+  }
+}
+
+// Hide loading spinner
+function hideLoading() {
+  const loadingElement = document.querySelector(".sk-chase");
+  if (loadingElement) {
+    loadingElement.style.display = "none";
+  }
 }
 
 // Attach logout event listeners
