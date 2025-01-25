@@ -137,13 +137,14 @@ function renderBranches(branches) {
 
 // Render a single branch
 function renderBranch(branchName, branch) {
+  const doorStatus = branch.Door || "Unknown"; // Default to "Unknown" if Door status is not set
   return `
-    <div class="box">
+    <div class="box" data-branch="${branchName}">
       <h3>Room Temperature</h3>
       <span class="temperature">${branch.Temperature}°C</span>
       <div class="details">
         <span><i class="fas fa-code-branch"></i> Branch: <strong>${branchName}</strong></span>
-        <span><i class="fas fa-door-open"></i> Door: <strong>Rush Time</strong></span>
+        <span><i class="fas fa-door-open"></i> Door: <strong>${doorStatus}</strong></span>
       </div>
     </div>
   `;
