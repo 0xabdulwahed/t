@@ -1,218 +1,281 @@
-// Handle Authentication State
-auth.onAuthStateChanged((user) => {
-  showLoading(); // إظهار الـ loading أثناء انتظار التحقق
-  if (user || localStorage.getItem("isLoggedIn") === "true") {
-    const userEmailKey = user ? user.email.replace(".", ",") : "guest";
-    db.ref(`Users/${userEmailKey}`)
-      .once("value")
-      .then((snapshot) => {
-        const userData = snapshot.val();
-        const role = userData?.Role;
-        const branch = userData?.Branch;
-        const branches = userData?.Branches;
+// Constants
+const MONITORING_INTERVAL = 30 * 60 * 1000; // 30 minutes
+const LOCAL_STORAGE_KEY = "isLoggedIn";
+const ROLES = {
+  ADMIN: "admin",
+  MANAGER: "manager",
+  AREA_MANAGER: "area-manager",
+};
 
-        switch (role) {
-          case "Admin":
-            loadAdminDashboard();
-            startTemperatureMonitoring();
-            break;
-          case "Manager":
-            loadManagerDashboard(branch);
-            startTemperatureMonitoring(branch);
-            break;
-          case "RegionalManager":
-            if (branches) {
-              const branchArray = Object.keys(branches);
-              loadRegionalManagerDashboard(branchArray);
-              startTemperatureMonitoringForBranches(branchArray);
-            }
-            break;
-          default:
-            handleUnauthorizedAccess();
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching user data:", error);
-        handleUnauthorizedAccess();
-      });
-  } else {
-    redirectToLogin();
+// Temperature Monitor Class
+class TemperatureMonitor {
+  constructor() {
+    this.lastNotifiedBranches = {};
   }
-});
 
-// Track last notified branches to avoid spamming notifications
-let lastNotifiedBranches = {};
+  startMonitoring(branchFilter = null) {
+    this.checkTemperature(branchFilter);
+    setInterval(() => this.checkTemperature(branchFilter), MONITORING_INTERVAL);
+  }
 
-// Start monitoring multiple branches for Regional Manager
-function startTemperatureMonitoringForBranches(branchArray) {
-  branchArray.forEach((branch) => checkTemperature(branch));
-  setInterval(() => {
-    branchArray.forEach((branch) => checkTemperature(branch));
-  }, 30 * 60 * 1000); // Check every 30 minutes
-}
+  checkTemperature(branchFilter = null) {
+    const branchRef = branchFilter
+      ? db.ref(`branches/${branchFilter}`)
+      : db.ref("branches");
 
-// Start monitoring for a single branch or all branches
-function startTemperatureMonitoring(branchFilter = null) {
-  checkTemperature(branchFilter);
-  setInterval(() => {
-    checkTemperature(branchFilter);
-  }, 30 * 60 * 1000); // Check every 30 minutes
-}
+    branchRef.on("value", (snapshot) => {
+      const branchesData = branchFilter
+        ? { [branchFilter]: snapshot.val() }
+        : snapshot.val();
 
-// Check temperature for a specific branch or all branches
-function checkTemperature(branchFilter = null) {
-  const branchRef = branchFilter ? db.ref(`Branches/${branchFilter}`) : db.ref("Branches");
+      if (!branchesData) return;
 
-  branchRef.on("value", (snapshot) => {
-    const branchesData = branchFilter ? { [branchFilter]: snapshot.val() } : snapshot.val();
+      Object.keys(branchesData).forEach((branchName) => {
+        const branch = branchesData[branchName];
+        const refrigerators = branch?.devices?.refrigerators || {};
 
-    if (!branchesData) return;
+        Object.keys(refrigerators).forEach((roomName) => {
+          const room = refrigerators[roomName];
 
-    Object.keys(branchesData).forEach((branchName) => {
-      const branch = branchesData[branchName];
-      if (branch.Temperature >= 10 && shouldNotify(branchName)) {
-        sendNotification(
-          "Alert: High Temperature",
-          `The temperature in branch ${branchName} is ${branch.Temperature}°C.`
-        );
-        lastNotifiedBranches[branchName] = Date.now();
-      }
+          // Check Temperature
+          if (
+            room.temperature >= 5 &&
+            this.shouldNotify(branchName, roomName)
+          ) {
+            NotificationService.send(
+              "Warning: High Temperature",
+              `Temperature at ${branch.name || branchName} (${
+                branch.location || "N/A"
+              }) is ${room.temperature}°C in ${roomName}`
+            );
+            this.lastNotifiedBranches[branchName] = {
+              ...this.lastNotifiedBranches[branchName],
+              [roomName]: Date.now(),
+            };
+          }
+
+          // Check Door Status
+          if (
+            room["door-room"] === "open" &&
+            this.shouldNotify(branchName, `${roomName}-door`)
+          ) {
+            NotificationService.send(
+              "Warning: Door Open",
+              `The door of ${roomName} at ${branch.name || branchName} (${
+                branch.location || "N/A"
+              }) is open`
+            );
+            this.lastNotifiedBranches[branchName] = {
+              ...this.lastNotifiedBranches[branchName],
+              [`${roomName}-door`]: Date.now(),
+            };
+          }
+        });
+      });
     });
-  });
+  }
+
+  shouldNotify(branchName, roomType) {
+    return (
+      !this.lastNotifiedBranches[branchName]?.[roomType] ||
+      Date.now() - this.lastNotifiedBranches[branchName][roomType] >
+        MONITORING_INTERVAL
+    );
+  }
 }
 
-// Determine if a notification should be sent for a branch
-function shouldNotify(branchName) {
-  return (
-    !lastNotifiedBranches[branchName] ||
-    Date.now() - lastNotifiedBranches[branchName] > 30 * 60 * 1000 // Notify every 30 minutes
-  );
-}
+// Dashboard Manager Class
+class DashboardManager {
+  static loadAdminDashboard() {
+    UIManager.showLoading();
+    db.ref("branches").on("value", (snapshot) => {
+      const branches = snapshot.val();
+      const dashboard = document.getElementById("dashboard");
+      dashboard.innerHTML = branches
+        ? this.renderBranches(branches)
+        : "<p>No branches available</p>";
+      UIManager.hideLoading();
+    });
+  }
 
-// Load Admin Dashboard
-function loadAdminDashboard() {
-  showLoading(); // إظهار الـ loading قبل جلب البيانات
-  db.ref("Branches").on("value", (snapshot) => {
-    const branches = snapshot.val();
-    const dashboard = document.getElementById("dashboard");
-    dashboard.innerHTML = branches
-      ? renderBranches(branches)
-      : "<p>No branches available.</p>";
-    hideLoading(); // إخفاء الـ loading بعد جلب البيانات
-  });
-}
-
-// Load Manager Dashboard
-function loadManagerDashboard(branchName) {
-  showLoading(); // إظهار الـ loading قبل جلب البيانات
-  db.ref(`Branches/${branchName}`).on("value", (snapshot) => {
-    const branchData = snapshot.val();
-    const dashboard = document.getElementById("dashboard");
-
-    if (branchData) {
-      dashboard.innerHTML = renderBranch(branchName, branchData);
-    } else {
-      dashboard.innerHTML = "<p>No data available for this branch.</p>";
-    }
-    hideLoading(); // إخفاء الـ loading بعد جلب البيانات
-  });
-}
-
-// Load Regional Manager Dashboard
-function loadRegionalManagerDashboard(branchArray) {
-  showLoading(); // إظهار الـ loading قبل جلب البيانات
-  const dashboard = document.getElementById("dashboard");
-  dashboard.innerHTML = ""; // Clear previous content
-
-  let branchesLoaded = 0; // عداد لعدد الفروع التي تم تحميل بياناتها
-
-  branchArray.forEach((branchName) => {
-    db.ref(`Branches/${branchName}`).on("value", (snapshot) => {
+  static loadManagerDashboard(branchName) {
+    UIManager.showLoading();
+    db.ref(`branches/${branchName}`).on("value", (snapshot) => {
       const branchData = snapshot.val();
-      if (branchData) {
-        dashboard.innerHTML += renderBranch(branchName, branchData);
-      }
-      branchesLoaded++;
-
-      // إذا تم تحميل بيانات جميع الفروع، نخفي الـ loading
-      if (branchesLoaded === branchArray.length) {
-        hideLoading();
-      }
+      const dashboard = document.getElementById("dashboard");
+      dashboard.innerHTML = branchData
+        ? this.renderBranch(branchName, branchData)
+        : "<p>No data available for this branch</p>";
+      UIManager.hideLoading();
     });
-  });
-}
+  }
 
-// Render all branches
-function renderBranches(branches) {
-  return Object.entries(branches)
-    .map(([branchName, branch]) => renderBranch(branchName, branch))
-    .join("");
-}
+  static loadRegionalDashboard(branchArray) {
+    UIManager.showLoading();
+    const dashboard = document.getElementById("dashboard");
+    dashboard.innerHTML = "";
 
-// Render a single branch
-function renderBranch(branchName, branch) {
-  return `
+    Promise.all(
+      branchArray.map(
+        (branchName) =>
+          new Promise((resolve) =>
+            db.ref(`branches/${branchName}`).on("value", (snapshot) => {
+              resolve({ branchName, data: snapshot.val() });
+            })
+          )
+      )
+    ).then((results) => {
+      results.forEach(({ branchName, data }) => {
+        if (data) dashboard.innerHTML += this.renderBranch(branchName, data);
+      });
+      UIManager.hideLoading();
+    });
+  }
+
+  static renderBranches(branches) {
+    return Object.entries(branches)
+      .map(([name, data]) => this.renderBranch(name, data))
+      .join("");
+  }
+
+  static renderBranch(branchName, branchData) {
+    const refrigerators = branchData?.devices?.refrigerators || {};
+
+    return `
     <div class="box" data-branch="${branchName}">
-      <h3>Room Temperature</h3>
-      <span class="temperature">${branch.Temperature}°C</span>
-      <div class="details">
-        <span><i class="fas fa-code-branch"></i> Branch: <strong>${branchName}</strong></span>
-        <span><i class="fas fa-door-open"></i> Door: <strong>${branch.Door}</strong></span>
-      </div>
+      <h2>${branchData.name || branchName}</h2>
+      <span class="location"><i class="i fas fa-map-marker-alt"></i> ${
+        branchData.location || "N/A"
+      }</span>
+
+      ${Object.entries(refrigerators)
+        .map(
+          ([roomName, room]) => `
+          <div class="room-section">
+            <h3><i class="fas fa-snowflake"></i> ${roomName}</h3>
+            <div class="sensor-data">
+              <span class="temperature">${room.temperature || "N/A"}°C</span>
+              <span class="door-status">Door: ${
+                room["door-room"] || "N/A"
+              }</span>
+            </div>
+          </div>
+        `
+        )
+        .join("")}
     </div>
   `;
+  }
 }
 
-// Send a browser notification
-function sendNotification(title, body) {
-  if (Notification.permission === "granted") {
-    new Notification(title, { body });
-  } else if (Notification.permission !== "denied") {
-    Notification.requestPermission().then((permission) => {
-      if (permission === "granted") {
-        new Notification(title, { body });
-      }
+// Notification Service
+class NotificationService {
+  static send(title, body) {
+    if (Notification.permission === "granted") {
+      new Notification(title, { body });
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then((permission) => {
+        if (permission === "granted") new Notification(title, { body });
+      });
+    }
+  }
+}
+
+// UI Manager
+class UIManager {
+  static showLoading() {
+    const loader = document.querySelector(".sk-chase");
+    if (loader) loader.style.display = "block";
+  }
+
+  static hideLoading() {
+    const loader = document.querySelector(".sk-chase");
+    if (loader) loader.style.display = "none";
+  }
+
+  static setupEventListeners() {
+    document.querySelectorAll(".logout-button").forEach((button) => {
+      button.addEventListener("click", AuthManager.handleLogout);
     });
   }
 }
 
-// Handle unauthorized access
-function handleUnauthorizedAccess() {
-  alert("Unauthorized access!");
-  auth.signOut();
-  localStorage.removeItem("isLoggedIn");
-  redirectToLogin();
-}
+// Auth Manager
+class AuthManager {
+  static init() {
+    auth.onAuthStateChanged((user) => this.handleAuthState(user));
+  }
 
-// Redirect to login page
-function redirectToLogin() {
-  window.location.href = "login.html";
-}
+  static handleAuthState(user) {
+    UIManager.showLoading();
 
-// Handle logout functionality
-function handleLogout() {
-  auth.signOut().then(() => {
-    localStorage.removeItem("isLoggedIn");
-    redirectToLogin();
-  });
-}
+    if (user || localStorage.getItem(LOCAL_STORAGE_KEY) === "true") {
+      this.fetchUserData(user);
+    } else {
+      this.redirectToLogin();
+    }
+  }
 
-// Show loading spinner
-function showLoading() {
-  const loadingElement = document.querySelector(".sk-chase");
-  if (loadingElement) {
-    loadingElement.style.display = "block";
+  static async fetchUserData(user) {
+    try {
+      const userEmailKey = user ? user.email.replace(".", ",") : "guest";
+      const snapshot = await db.ref(`users/${userEmailKey}`).once("value");
+      const userData = snapshot.val();
+
+      if (!userData) throw new Error("User data not found");
+
+      this.handleUserRole(userData.role, userData.branch, userData.branches);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      this.handleUnauthorizedAccess();
+    }
+  }
+
+  static handleUserRole(role, branch, branches) {
+    const temperatureMonitor = new TemperatureMonitor();
+
+    switch (role) {
+      case ROLES.ADMIN:
+        DashboardManager.loadAdminDashboard();
+        temperatureMonitor.startMonitoring();
+        break;
+      case ROLES.MANAGER:
+        DashboardManager.loadManagerDashboard(branch);
+        temperatureMonitor.startMonitoring(branch);
+        break;
+      case ROLES.AREA_MANAGER:
+        if (branches) {
+          const branchArray = Object.keys(branches);
+          DashboardManager.loadRegionalDashboard(branchArray);
+          temperatureMonitor.startMonitoring(branchArray);
+        }
+        break;
+      default:
+        this.handleUnauthorizedAccess();
+    }
+  }
+
+  static handleUnauthorizedAccess() {
+    alert("Unauthorized access!");
+    this.signOutUser();
+  }
+
+  static handleLogout() {
+    auth.signOut().then(() => this.signOutUser());
+  }
+
+  static signOutUser() {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    this.redirectToLogin();
+  }
+
+  static redirectToLogin() {
+    window.location.href = "login.html";
   }
 }
 
-// Hide loading spinner
-function hideLoading() {
-  const loadingElement = document.querySelector(".sk-chase");
-  if (loadingElement) {
-    loadingElement.style.display = "none";
-  }
-}
-
-// Attach logout event listeners
-document.getElementById("logout-button").addEventListener("click", handleLogout);
-document.getElementById("logout-button-mobile").addEventListener("click", handleLogout);
+// Initialize Application
+document.addEventListener("DOMContentLoaded", () => {
+  AuthManager.init();
+  UIManager.setupEventListeners();
+});
