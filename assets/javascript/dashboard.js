@@ -218,9 +218,21 @@ class AuthManager {
 
   static async fetchUserData(user) {
     try {
-      const userEmailKey = user ? user.email.replace(".", ",") : "guest";
-      const snapshot = await db.ref(`users/${userEmailKey}`).once("value");
-      const userData = snapshot.val();
+      const snapshot = await db.ref("users").once("value");
+      const users = snapshot.val();
+
+      if (!users) throw new Error("No users found");
+
+      let userData = null;
+      let userId = null;
+
+      for (const id in users) {
+        if (users[id].email === user.email) {
+          userData = users[id];
+          userId = id;
+          break;
+        }
+      }
 
       if (!userData) throw new Error("User data not found");
 
